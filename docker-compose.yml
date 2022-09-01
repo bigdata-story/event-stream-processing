@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  producer:
+    build: .
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.CassandraWriter
+    networks:
+      - overlay
+
+networks:
+  overlay:
+    external: true
+    name: story-network
