@@ -3,16 +3,73 @@ version: '3.9'
 services:
   active-user-exporter:
     build: .
+    restart: always
     environment:
-      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.PlayedTimeExporter
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersExporter
+    env_file:
+      - ./project.env
     networks:
       - overlay
-#  active-user-in-course-exporter:
-#    build: .
-#    environment:
-#      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersInCourseExporter
-#    networks:
-#      - overlay
+
+  active-user-in-course-exporter:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersInCourseExporter
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
+
+  cassandra-writer:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.CassandraWriter
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
+
+  event-type-counter:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.EventTypeCounter
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
+
+  event-type-counter-in-course:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.EventTypeCounterInCourse
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
+
+  exporter:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.Exporter
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
+
+  played-time-exporter:
+    build: .
+    restart: always
+    environment:
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.PlayedTimeExporter
+    env_file:
+      - ./project.env
+    networks:
+      - overlay
 
 networks:
   overlay:

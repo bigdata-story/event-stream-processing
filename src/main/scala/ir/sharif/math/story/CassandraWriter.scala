@@ -1,6 +1,7 @@
 package ir.sharif.math.story
 
 import com.datastax.spark.connector._
+import ir.sharif.math.story.Utils.getKafkaStream
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
@@ -16,25 +17,12 @@ object CassandraWriter {
   def main(args: Array[String]): Unit = {
     val keyspace = "story"
     val table = "events"
-    val spark = SparkSession.builder
-      .config("spark.cassandra.connection.host", "cassandra-cluster")
-      .getOrCreate
-    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(1))
+
     val groupId = "cassandra-writer"
-    val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "kafka1:9092",
-      "key.deserializer" -> classOf[StringDeserializer],
-      "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> groupId,
-      "auto.offset.reset" -> "earliest",
-      "enable.auto.commit" -> (true: java.lang.Boolean),
-    )
     val topics = Array("events_topic")
-    val stream = KafkaUtils.createDirectStream[String, String](
-      streamingContext,
-      PreferConsistent,
-      Subscribe[String, String](topics, kafkaParams)
-    )
+
+    val (stream, streamingContext) = getKafkaStream(groupId, topics, "earliest")
+
     stream
       .map(x => ujson.read(x.value()).obj)
       .map(x => (x("course_id").str, x("user_id").str.toInt, x("session_id").str,

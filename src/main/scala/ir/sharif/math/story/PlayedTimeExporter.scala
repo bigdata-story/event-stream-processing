@@ -1,12 +1,13 @@
 package ir.sharif.math.story
 
 import com.datastax.spark.connector._
+import ir.sharif.math.story.Utils.{getKafkaStream, parseDate}
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.{Duration, Seconds, StreamingContext, Minutes}
+import org.apache.spark.streaming.{Duration, Minutes, Seconds, StreamingContext}
 
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.{LocalDateTime, ZoneId}
@@ -16,28 +17,14 @@ object PlayedTimeExporter {
   def main(args: Array[String]): Unit = {
     val keyspace = "story"
     val table = "course_played_time"
-    val spark = SparkSession.builder
-      .config("spark.cassandra.connection.host", "cassandra-cluster")
-      .config("spark.cores.max", "1")
-      .getOrCreate
-    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(1))
-    val groupId = "course-played-time-writer"
-    val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "kafka1:9092",
-      "key.deserializer" -> classOf[StringDeserializer],
-      "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> groupId,
-      "auto.offset.reset" -> "latest",
-      "enable.auto.commit" -> (true: java.lang.Boolean),
-    )
-    val topics = Array("video_events_by_user_id_course_id")
-    val stream = KafkaUtils.createDirectStream[String, String](
-      streamingContext,
-      PreferConsistent,
-      Subscribe[String, String](topics, kafkaParams)
-    )
 
-    stream.map(x => (x.partition(), ujson.read(x.value()).obj))
+    val groupId = "course-played-time-writer"
+    val topics = Array("video_events_by_user_id_course_id")
+
+    val (stream, streamingContext) = getKafkaStream(groupId, topics, "latest")
+
+    stream
+      .map(x => (x.partition(), ujson.read(x.value()).obj))
       .window(Minutes(60), Minutes(1))
       .map(x => (x._2("course_id").str, x._2("event_type").str,
         parseDate(x._2("event_time").str).getTime / 1000, x._2("user_id").str.toInt, x._1)
@@ -87,9 +74,5 @@ object PlayedTimeExporter {
     )
     streamingContext.start()
     streamingContext.awaitTermination()
-  }
-
-  def parseDate(dateString: String): Date = {
-    Date.from(LocalDateTime.parse(dateString, ISO_DATE_TIME).atZone(ZoneId.systemDefault).toInstant)
   }
 }
