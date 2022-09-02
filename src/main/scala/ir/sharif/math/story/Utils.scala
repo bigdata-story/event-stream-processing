@@ -14,6 +14,10 @@ import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.util.Date
 
 object Utils {
+  val cassandraHost = scala.util.Properties.envOrElse("CASSANDRA_HOST", "cassandra-cluster")
+  val sparkMaxCores = scala.util.Properties.envOrElse("SPARK_MAX_CORES", "1")
+  val kafkaBootstrapServers = scala.util.Properties.envOrElse("KAFKA_BOOTSTRAP_SERVERS", "kafka1:9092")
+
 
   def parseDate(dateString: String): Date = {
     Date.from(LocalDateTime.parse(dateString, ISO_DATE_TIME).atZone(ZoneId.systemDefault).toInstant)
@@ -21,13 +25,13 @@ object Utils {
 
   def getKafkaStream(groupId: String, topics: Array[String], offset: String): (InputDStream[ConsumerRecord[String, String]], StreamingContext) = {
     val spark = SparkSession.builder
-      .config("spark.cassandra.connection.host", "cassandra-cluster")
-      .config("spark.cores.max", "1")
+      .config("spark.cassandra.connection.host", cassandraHost)
+      .config("spark.cores.max", sparkMaxCores)
       .getOrCreate
-    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(1))
+    val streamingContext = new StreamingContext(spark.sparkContext, Seconds(10))
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "kafka1:9092",
+      "bootstrap.servers" -> kafkaBootstrapServers,
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> groupId,

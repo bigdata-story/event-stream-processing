@@ -1,12 +1,6 @@
 package ir.sharif.math.story
 
 import ir.sharif.math.story.Utils.getKafkaStream
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
-import org.apache.spark.streaming.kafka010.KafkaUtils
-import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object Exporter {
   def main(args: Array[String]): Unit = {

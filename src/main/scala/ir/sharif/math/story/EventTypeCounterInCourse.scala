@@ -2,12 +2,7 @@ package ir.sharif.math.story
 
 import com.datastax.spark.connector._
 import ir.sharif.math.story.Utils.getKafkaStream
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
-import org.apache.spark.streaming.kafka010.KafkaUtils
-import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
+import org.apache.spark.streaming.Minutes
 
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.{LocalDateTime, ZoneId}
