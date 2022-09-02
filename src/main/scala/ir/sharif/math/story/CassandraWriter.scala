@@ -17,15 +17,11 @@ object CassandraWriter {
       .map(x => ujson.read(x.value()).obj)
       .map(x => (java.util.UUID.randomUUID.toString, x("course_id").str, x("user_id").str.toInt, x("session_id").str,
         x("event_type").str, parseDate(x("event_time").str)))
-      .foreachRDD(rdd => {
+      .foreachRDD(rdd =>
         rdd.saveToCassandra(keyspace, "events_by_user_course",
           SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time")
         )
-        rdd.saveToCassandra(keyspace, "events_by_user",
-          SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time"))
-        rdd.saveToCassandra(keyspace, "events_by_course",
-          SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time"))
-      })
+      )
     streamingContext.start()
     streamingContext.awaitTermination()
   }
