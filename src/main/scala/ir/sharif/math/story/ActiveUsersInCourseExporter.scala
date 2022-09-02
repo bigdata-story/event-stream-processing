@@ -6,7 +6,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.{LocalDateTime, ZoneId}
@@ -37,6 +37,7 @@ object ActiveUsersInCourseExporter {
       Subscribe[String, String](topics, kafkaParams)
     )
     stream.map(x => (x.partition(), ujson.read(x.value()).obj))
+      .window(Minutes(1), Seconds(10))
       .map(x => (x._2("course_id").str, x._2("user_id").str.toInt, x._2("session_id").str,
         x._2("event_type").str, parseDate(x._2("event_time").str), x._1)
       ).foreachRDD(rdd => rdd

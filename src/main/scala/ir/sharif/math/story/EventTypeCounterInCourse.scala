@@ -39,7 +39,7 @@ object EventTypeCounterInCourse {
 
     stream
       .map(x => (x.partition(), ujson.read(x.value()).obj))
-      .window(Minutes(1), Seconds(1))
+      .window(Minutes(60), Minutes(1))
       .map(x => (x._2("course_id").str, x._2("user_id").str.toInt, x._2("session_id").str,
         x._2("event_type").str, parseDate(x._2("event_time").str), x._1)
       ).foreachRDD(rdd => rdd

@@ -6,7 +6,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 
 import java.time.format.DateTimeFormatter.ISO_DATE_TIME
 import java.time.{LocalDateTime, ZoneId}
@@ -38,6 +38,7 @@ object ActiveUsersExporter {
     )
     stream
       .map(x => (ujson.read(x.value()).obj, x.partition()))
+      .window(Minutes(1), Seconds(10))
       .map(x => (x._1("user_id").str.toInt, x._2))
       .foreachRDD(rdd =>
         rdd.groupBy(x => x._2)
