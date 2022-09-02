@@ -18,6 +18,7 @@ object ActiveUsersInCourseExporter {
     val table = "active_users_in_course"
     val spark = SparkSession.builder
       .config("spark.cassandra.connection.host", "cassandra-cluster")
+      .config("spark.cores.max", "1")
       .getOrCreate
     val streamingContext = new StreamingContext(spark.sparkContext, Seconds(1))
     val groupId = "active-users-in-course-writer"
@@ -26,7 +27,7 @@ object ActiveUsersInCourseExporter {
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> groupId,
-      "auto.offset.reset" -> "earliest",
+      "auto.offset.reset" -> "latest",
       "enable.auto.commit" -> (true: java.lang.Boolean),
     )
     val topics = Array("events_by_user_id_course_id")
@@ -35,14 +36,14 @@ object ActiveUsersInCourseExporter {
       PreferConsistent,
       Subscribe[String, String](topics, kafkaParams)
     )
-    stream
-      .map(x => (x.partition(), ujson.read(x.value()).obj))
+    stream.map(x => (x.partition(), ujson.read(x.value()).obj))
       .map(x => (x._2("course_id").str, x._2("user_id").str.toInt, x._2("session_id").str,
-        x._2("event_type").str, parseDate(x._2("event_time").str), x._1, ))
-      .foreachRDD(rdd => rdd
-        .groupBy(x => (x._1, x._6))
-        .map(x => (x._1._1, x._1._2, x._2.map(y => y._2).toSet.count(_ => true)))
-        .saveToCassandra(keyspace, table, SomeColumns("course_id", "partition", "user_count")))
+        x._2("event_type").str, parseDate(x._2("event_time").str), x._1)
+      ).foreachRDD(rdd => rdd
+      .groupBy(x => (x._1, x._6))
+      .map(x => (x._1._1, x._1._2, x._2.map(y => y._2).toSet.size))
+      .saveToCassandra(keyspace, table, SomeColumns("course_id", "partition", "user_count"))
+    )
     streamingContext.start()
     streamingContext.awaitTermination()
   }
