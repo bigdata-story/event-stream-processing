@@ -51,11 +51,11 @@ services:
     networks:
       - overlay
 
-  exporter:
+  hdfs-exporter:
     build: .
     restart: always
     environment:
-      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.Exporter
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.HDFSExporter
     env_file:
       - ./project.env
     networks:

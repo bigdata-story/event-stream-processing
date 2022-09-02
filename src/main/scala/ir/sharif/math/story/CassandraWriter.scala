@@ -10,19 +10,22 @@ import java.util.Date
 object CassandraWriter {
   def main(args: Array[String]): Unit = {
     val keyspace = "story"
-    val table = "events"
-
     val groupId = "cassandra-writer"
-    val topics = Array("events_topic")
-
+    val topics = Array("events_by_user_id_course_id")
     val (stream, streamingContext) = getKafkaStream(groupId, topics, "earliest")
-
     stream
       .map(x => ujson.read(x.value()).obj)
-      .map(x => (x("course_id").str, x("user_id").str.toInt, x("session_id").str,
+      .map(x => (java.util.UUID.randomUUID.toString, x("course_id").str, x("user_id").str.toInt, x("session_id").str,
         x("event_type").str, parseDate(x("event_time").str)))
-      .foreachRDD(rdd => rdd.saveToCassandra(keyspace, table,
-        SomeColumns("course_id", "user_id", "session_id", "event_type", "event_time")))
+      .foreachRDD(rdd => {
+        rdd.saveToCassandra(keyspace, "events_by_user_course",
+          SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time")
+        )
+        rdd.saveToCassandra(keyspace, "events_by_user",
+          SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time"))
+        rdd.saveToCassandra(keyspace, "events_by_course",
+          SomeColumns("uuid", "course_id", "user_id", "session_id", "event_type", "event_time"))
+      })
     streamingContext.start()
     streamingContext.awaitTermination()
   }
