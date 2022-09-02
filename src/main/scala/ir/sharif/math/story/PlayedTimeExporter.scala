@@ -40,24 +40,44 @@ object PlayedTimeExporter {
     stream.map(x => (x.partition(), ujson.read(x.value()).obj))
       .window(Minutes(1), Seconds(1))
       .map(x => (x._2("course_id").str, x._2("event_type").str,
-        parseDate(x._2("event_time").str).getTime, x._1)
+        parseDate(x._2("event_time").str).getTime, x._2("user_id").str.toInt, x._1)
       ).foreachRDD(rdd =>
-      rdd.groupBy(x => (x._1, x._2, x._4))
-      .map(x => {
-        if (x._1._2.equals("play_video")) {
-          (x._1._1, x._1._3, -1 * x._2.map(y => y._3).sum, x._2.size)
+      rdd.groupBy(x => (x._1, x._4, x._5))
+      .map(x => (x._1, x._2.toList.sortBy(y => y._3)))
+      .map(x =>{
+        val iter = x._2.iterator
+        var ans: Long = 0
+        var ch: Boolean = false
+        var open: Boolean = false
+        while(iter.hasNext){
+          val y = iter.next()
+          if(y._2.equals("play_video")){
+            ans -= y._3
+            open = true
+          }
+          else {
+            if(open){
+              ans += y._3
+              open = false
+            }
+            else {
+              if(!ch){
+                val tmp = y._3 - (System.currentTimeMillis() - 60 * 1000)
+                if(tmp > 0) {
+                  ans += tmp
+                }
+                ch = true
+              }
+            }
+          }
         }
-        else {
-          (x._1._1, x._1._3, x._2.map(y => y._3).sum, -1 * x._2.size)
+        if(open){
+          ans += System.currentTimeMillis()
         }
+        (x._1._1, x._1._3, ans)
       })
       .groupBy(x => (x._1, x._2))
-      .map(x => (x._1._1, x._1._2, x._2.map(y => y._3).sum, x._2.map(y => y._4).sum))
-      .map(x => {
-        if (x._4 > 0)
-        (x._1, x._2, ((x._3 + x._4 * System.currentTimeMillis()) / 1000).toInt)
-        else (x._1, x._2, ((x._3 + x._4 * (System.currentTimeMillis() - 60 * 1000 * 1000)) / 1000).toInt)
-      })
+      .map(x => (x._1._1, x._1._2, x._2.map(y => y._3).sum / 1000))
       .saveToCassandra(keyspace, table, SomeColumns("course_id", "partition", "play_time"))
     )
     streamingContext.start()
