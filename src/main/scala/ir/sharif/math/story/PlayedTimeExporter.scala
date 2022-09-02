@@ -38,26 +38,27 @@ object PlayedTimeExporter {
     )
 
     stream.map(x => (x.partition(), ujson.read(x.value()).obj))
-      .window(Minutes(60), Minutes(1))
+      .window(Minutes(1), Seconds(1))
       .map(x => (x._2("course_id").str, x._2("event_type").str,
         parseDate(x._2("event_time").str).getTime, x._1)
-      ).foreachRDD(rdd => {
-      val play_list = List("play_video")
-      val stop_list = List("pause_video", "stop_video")
+      ).foreachRDD(rdd =>
       rdd.groupBy(x => (x._1, x._2, x._4))
-        .map(x => {
-          if (play_list.contains(x._1._2)) {
-            (x._1._1, x._1._3, -1 * x._2.map(y => y._3).sum, x._2.size)
-          }
-          else {
-            (x._1._1, x._1._3, x._2.map(y => y._3).sum, -1 * x._2.size)
-          }
-        })
-        .groupBy(x => (x._1, x._2))
-        .map(x => (x._1._1, x._1._2, x._2.map(y => y._3).sum, x._2.map(y => y._4).sum))
-        .map(x => (x._1, x._2, ((x._3 + x._4 * System.currentTimeMillis()) / 1000).toInt))
-        .saveToCassandra(keyspace, table, SomeColumns("course_id", "partition", "play_time"))
-    }
+      .map(x => {
+        if (x._1._2.equals("play_video")) {
+          (x._1._1, x._1._3, -1 * x._2.map(y => y._3).sum, x._2.size)
+        }
+        else {
+          (x._1._1, x._1._3, x._2.map(y => y._3).sum, -1 * x._2.size)
+        }
+      })
+      .groupBy(x => (x._1, x._2))
+      .map(x => (x._1._1, x._1._2, x._2.map(y => y._3).sum, x._2.map(y => y._4).sum))
+      .map(x => {
+        if (x._4 > 0)
+        (x._1, x._2, ((x._3 + x._4 * System.currentTimeMillis()) / 1000).toInt)
+        else (x._1, x._2, ((x._3 + x._4 * (System.currentTimeMillis() - 60 * 1000 * 1000)) / 1000).toInt)
+      })
+      .saveToCassandra(keyspace, table, SomeColumns("course_id", "partition", "play_time"))
     )
     streamingContext.start()
     streamingContext.awaitTermination()

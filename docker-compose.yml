@@ -1,12 +1,18 @@
 version: '3.9'
 
 services:
-  producer:
+  active-user-exporter:
     build: .
     environment:
-      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.CassandraWriter
+      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.PlayedTimeExporter
     networks:
       - overlay
+#  active-user-in-course-exporter:
+#    build: .
+#    environment:
+#      - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersInCourseExporter
+#    networks:
+#      - overlay
 
 networks:
   overlay:
