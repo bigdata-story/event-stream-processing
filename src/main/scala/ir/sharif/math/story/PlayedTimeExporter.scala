@@ -50,10 +50,10 @@ object PlayedTimeExporter {
                 if (tmp > 0) {
                   ans += tmp
                 }
-                ch = true
               }
             }
           }
+          ch = true
         }
         if (open) {
           ans += max
