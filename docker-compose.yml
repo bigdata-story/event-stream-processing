@@ -6,6 +6,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersExporter
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -16,6 +17,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.ActiveUsersInCourseExporter
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -26,6 +28,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.CassandraWriter
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -36,6 +39,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.EventTypeCounter
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -46,6 +50,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.EventTypeCounterInCourse
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -56,6 +61,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.HDFSExporter
+      - SPARK_MAX_CORES=1
     env_file:
       - ./project.env
     networks:
@@ -66,6 +72,7 @@ services:
     restart: always
     environment:
       - SPARK_APPLICATION_MAIN_CLASS=ir.sharif.math.story.PlayedTimeExporter
+      - SPARK_MAX_CORES=2
     env_file:
       - ./project.env
     networks:
